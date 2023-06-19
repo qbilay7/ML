@@ -1,4 +1,4 @@
-///
+'''
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -130,7 +130,7 @@ print(f'Test score of trained model: {test_score}')
 
 #Confusion matrix:
 y_predictions = k_model.predict(X_test)
-///
+'''
 
 conf_matrix = confusion_matrix(y_test, y_predictions)
 print(f'Accuracy: {accuracy_score(y_test, y_predictions)}')
