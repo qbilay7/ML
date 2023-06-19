@@ -1,0 +1,136 @@
+```
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns; sns.set()
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2, f_classif
+from sklearn.feature_selection import SelectFromModel
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+
+heart_data=pd.read_csv('Desktop\heart.csv')
+print(heart_data)
+#To read the file and see the dataset
+print(heart_data.head())
+print(heart_data.info())
+print(heart_data.describe())
+heart_data=heart_data.dropna()  #To get rid of empty values
+
+data=zip(heart_data['Cholesterol'], heart_data['Age'], heart_data['HeartDisease'])
+syn_data=pd.DataFrame(data, columns=['Cholesterol', 'Age','HeartDisease']) #Synthetic data
+print(syn_data.head())
+
+plt.plot(syn_data['Cholesterol'],syn_data['Age'])
+sns.lineplot(x='Cholesterol', y='Age', data=syn_data) #Line Plot
+plt.show()
+
+plt.bar(syn_data['Cholesterol'],syn_data['Age'])
+sns.barplot(x='Cholesterol', y='Age', data=syn_data) #Bar Plot
+plt.show()
+
+sns.boxplot(x='Cholesterol', y='Age', data=syn_data) #Box plot
+plt.show()
+
+plt.scatter(heart_data['Cholesterol'],heart_data['Age']) #Scatter Plot
+plt.show()
+
+sns.violinplot(x='Cholesterol',y='Age', data=syn_data) #Violin Plot
+
+#As we can see in the plots, it is more likely to have cholesterol between ages of 40 and 70
+
+#Preprocessing:
+
+features=['Sex','Cholesterol', 'Age', 'RestingBP', 'Oldpeak','MaxHR','FastingBS']
+target=['HeartDisease']
+X=heart_data[features].values
+y=heart_data[target].values
+
+genders=X[:,0]
+
+one_hot_encoding=[]
+for sample in genders:
+    if sample == 'M':
+        one_hot_encoding.append([1,0])
+    
+    elif sample == 'F':
+        one_hot_encoding.append([0,1])
+
+print("OneHotEncoding: ", one_hot_encoding[:10])
+encoding_map={'Sex': {'M': 1, 'F': 0}}
+heart_data.replace(encoding_map, inplace=True)
+print(heart_data)
+
+#Label Encoding
+X[:, 0][X[:, 0] == 'M'] = 1
+X[:, 0][X[:, 0] == 'F'] = 0
+print("Label Encoding: ", X[:10])
+
+#Normalization
+minX = X.min(axis=0)
+maxX = X.max(axis=0)
+
+X = (X - minX) / (maxX - minX)
+print("Normalization: ", X[:10])
+
+#Replacing empty values with means 
+mean_RestingBP=heart_data['RestingBP'].mean()
+heart_data['RestingBP'].fillna(mean_RestingBP,inplace=True)
+#Replacing empty values with most common values
+mc_ChestPainType=heart_data['ChestPainType'].value_counts().idxmax()
+heart_data['ChestPainType'].fillna(mc_ChestPainType, inplace=True)
+
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) 
+
+X_valid, X_test, y_valid, y_test = train_test_split(X_test, y_test, test_size=0.5, random_state=42)
+
+print(f'Total of sample in whole dataset: {len(X)}\n')
+print(f'Total of sample in train dataset: {len(X_train)}')
+print(f'Total of sample in validation dataset: {len(X_valid)}')
+print(f'Total of sample in test dataset: {len(X_test)}')
+
+feature2=['Age','RestingBP','Cholesterol']
+label='HeartDisease'
+
+X = heart_data[feature2]
+y = heart_data[label]
+# Selecting manually
+feature_selection = SelectKBest(chi2, k=2)
+feature_selection.fit(X, y)
+
+transformedX = feature_selection.transform(X)
+print(f"Old Shape: {X.shape} New shape: {transformedX.shape}")
+print('\t'.join(feature2))
+print('\t '.join([f"{s:.5f}" for s in feature_selection.scores_]))
+print('\t '.join([f"{p:.7f}" for p in feature_selection.pvalues_]))
+
+#Selecting automatically
+feature_selection = SelectFromModel(LogisticRegression(tol=1e-1))
+feature_selection.fit(X, y)
+
+transformedX = feature_selection.transform(X)
+print(f"New shape: {transformedX.shape}")
+print("Selected features: ", feature_selection.get_support())
+print("Selected features: ", np.array(features)[feature_selection.get_support(indices=True)])
+
+feature_selection = SelectFromModel(LinearSVC(tol=1e-1))
+feature_selection.fit(X, y)
+
+transformedX = feature_selection.transform(X)
+print(f"New shape: {transformedX.shape}")
+print("Selected features: ", feature_selection.get_support())
+print("Selected features: ", np.array(features)[feature_selection.get_support(indices=True)])
+
+feature_selection = SelectFromModel(DecisionTreeClassifier())
+feature_selection.fit(X, y)
+
+transformedX = feature_selection.transform(X)
+print(f"New shape: {transformedX.shape}")
+
+print("Selected features: ", feature_selection.get_support())
+print("Selected features: ", np.array(features)[feature_selection.get_support(indices=True)])
+```
